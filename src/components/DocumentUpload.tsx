@@ -407,8 +407,6 @@ interface Message {
 const DocumentUpload: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -433,8 +431,6 @@ const DocumentUpload: React.FC = () => {
       if (event.target.files && event.target.files[0]) {
         const file = event.target.files[0];
         setSelectedFile(file);
-        setAnalysisResult(null);
-        setError(null);
 
         setMessages((prev) => [
           ...prev,
@@ -459,7 +455,6 @@ const DocumentUpload: React.FC = () => {
 
   const handleFileUpload = useCallback(async () => {
     if (!selectedFile) {
-      setError('Please select a file first.');
       return;
     }
 
@@ -475,7 +470,6 @@ const DocumentUpload: React.FC = () => {
     setTimeout(scrollToBottom, 100);
 
     setIsLoading(true);
-    setError(null);
 
     const thinkingMsgId = Date.now().toString();
     setMessages((prev) => [
@@ -496,7 +490,6 @@ const DocumentUpload: React.FC = () => {
 
     try {
       const result = await uploadDocument(selectedFile);
-      setAnalysisResult(result);
 
       setMessages((prev) => {
         const filtered = prev.filter((msg) => msg.id !== thinkingMsgId);
@@ -511,7 +504,6 @@ const DocumentUpload: React.FC = () => {
       });
     } catch (err: any) {
       const errorMsg = err.response?.data?.detail || 'An error occurred during upload.';
-      setError(errorMsg);
 
       setMessages((prev) => {
         const filtered = prev.filter((msg) => msg.id !== thinkingMsgId);

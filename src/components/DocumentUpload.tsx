@@ -407,8 +407,8 @@ interface Message {
 const DocumentUpload: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [_analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [_error, setError] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -417,10 +417,10 @@ const DocumentUpload: React.FC = () => {
         <Typography>
           Welcome to MedScript AI! Upload a medical document, and I'll analyze it for you.
         </Typography>
-      )
-    }
+      ),
+    },
   ]);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -428,29 +428,34 @@ const DocumentUpload: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      setSelectedFile(file);
-      setAnalysisResult(null);
-      setError(null);
-      
-      // Add a message showing the selected file
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        type: 'user',
-        content: (
-          <Box>
-            <Typography variant="body1">
-              I've selected a document for analysis: <strong>{file.name}</strong>
-            </Typography>
-          </Box>
-        )
-      }]);
-      
-      setTimeout(scrollToBottom, 100);
-    }
-  }, []);
+  const handleFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (event.target.files && event.target.files[0]) {
+        const file = event.target.files[0];
+        setSelectedFile(file);
+        setAnalysisResult(null);
+        setError(null);
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            type: 'user',
+            content: (
+              <Box>
+                <Typography variant="body1">
+                  I've selected a document for analysis: <strong>{file.name}</strong>
+                </Typography>
+              </Box>
+            ),
+          },
+        ]);
+
+        setTimeout(scrollToBottom, 100);
+      }
+    },
+    []
+  );
 
   const handleFileUpload = useCallback(async () => {
     if (!selectedFile) {
@@ -458,68 +463,71 @@ const DocumentUpload: React.FC = () => {
       return;
     }
 
-    // Add a message showing the upload action
-    setMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      type: 'user',
-      content: (
-        <Typography>
-          Please analyze this document for me.
-        </Typography>
-      )
-    }]);
-    
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        type: 'user',
+        content: <Typography>Please analyze this document for me.</Typography>,
+      },
+    ]);
+
     setTimeout(scrollToBottom, 100);
-    
+
     setIsLoading(true);
     setError(null);
-    
-    // Add a "thinking" message
+
     const thinkingMsgId = Date.now().toString();
-    setMessages(prev => [...prev, {
-      id: thinkingMsgId,
-      type: 'bot',
-      content: (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CircularProgress size={20} />
-          <Typography>Analyzing your document...</Typography>
-        </Box>
-      )
-    }]);
-    
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: thinkingMsgId,
+        type: 'bot',
+        content: (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={20} />
+            <Typography>Analyzing your document...</Typography>
+          </Box>
+        ),
+      },
+    ]);
+
     setTimeout(scrollToBottom, 100);
-    
+
     try {
       const result = await uploadDocument(selectedFile);
       setAnalysisResult(result);
-      
-      // Remove the thinking message and add the result
-      setMessages(prev => {
-        const filtered = prev.filter(msg => msg.id !== thinkingMsgId);
-        return [...filtered, {
-          id: Date.now().toString(),
-          type: 'bot',
-          content: renderAnalysisResult(result)
-        }];
+
+      setMessages((prev) => {
+        const filtered = prev.filter((msg) => msg.id !== thinkingMsgId);
+        return [
+          ...filtered,
+          {
+            id: Date.now().toString(),
+            type: 'bot',
+            content: renderAnalysisResult(result),
+          },
+        ];
       });
     } catch (err: any) {
       const errorMsg = err.response?.data?.detail || 'An error occurred during upload.';
       setError(errorMsg);
-      
-      // Remove the thinking message and add the error
-      setMessages(prev => {
-        const filtered = prev.filter(msg => msg.id !== thinkingMsgId);
-        return [...filtered, {
-          id: Date.now().toString(),
-          type: 'bot',
-          content: (
-            <Alert severity="error" sx={{ width: '100%' }}>
-              {errorMsg}
-            </Alert>
-          )
-        }];
+
+      setMessages((prev) => {
+        const filtered = prev.filter((msg) => msg.id !== thinkingMsgId);
+        return [
+          ...filtered,
+          {
+            id: Date.now().toString(),
+            type: 'bot',
+            content: (
+              <Alert severity="error" sx={{ width: '100%' }}>
+                {errorMsg}
+              </Alert>
+            ),
+          },
+        ];
       });
-      
       console.error('Upload error:', err);
     } finally {
       setIsLoading(false);
@@ -533,16 +541,19 @@ const DocumentUpload: React.FC = () => {
         <Typography variant="h6" gutterBottom>
           Analysis Complete
         </Typography>
-        
+
         <Typography variant="body1" gutterBottom>
           <strong>Document Type:</strong> {result.document_type}
         </Typography>
-        
+
         <Typography variant="body1" gutterBottom>
           <strong>Summary:</strong> {result.summary}
         </Typography>
-        
-        <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>
+
+        <Typography
+          variant="subtitle1"
+          sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}
+        >
           Key Findings:
         </Typography>
         <List dense disablePadding>
@@ -552,13 +563,22 @@ const DocumentUpload: React.FC = () => {
             </ListItem>
           ))}
         </List>
-        
-        <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>
+
+        <Typography
+          variant="subtitle1"
+          sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}
+        >
           Extracted Entities:
         </Typography>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          flexWrap="wrap"
+          useFlexGap
+          sx={{ mb: 2 }}
+        >
           {result.extracted_entities.map((entity, index) => (
-            <Chip 
+            <Chip
               key={index}
               label={`${entity.entity_type}: ${entity.entity_value}`}
               size="small"
@@ -567,37 +587,62 @@ const DocumentUpload: React.FC = () => {
             />
           ))}
         </Stack>
-        
-        <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+
+        <Typography
+          variant="subtitle1"
+          sx={{
+            mt: 2,
+            mb: 1,
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
           <WarningIcon color="warning" sx={{ mr: 1 }} />
           Safety Assessment:
         </Typography>
         <List dense>
           {result.safety_assessment.map((alert, index) => (
-            <ListItem key={index} sx={{ 
-              py: 1, 
-              bgcolor: alert.severity === 'critical' ? '#ffebee' : 
-                      alert.severity === 'major' ? '#fff8e1' : 'transparent',
-              borderRadius: 1,
-              mb: 1
-            }}>
-              <ListItemText 
+            <ListItem
+              key={index}
+              sx={{
+                py: 1,
+                bgcolor:
+                  alert.severity === 'critical'
+                    ? '#ffebee'
+                    : alert.severity === 'major'
+                    ? '#fff8e1'
+                    : 'transparent',
+                borderRadius: 1,
+                mb: 1,
+              }}
+            >
+              <ListItemText
                 primary={
-                  <Typography fontWeight="bold" color={
-                    alert.severity === 'critical' ? 'error' : 
-                    alert.severity === 'major' ? 'warning' : 'inherit'
-                  }>
+                  <Typography
+                    fontWeight="bold"
+                    color={
+                      alert.severity === 'critical'
+                        ? 'error'
+                        : alert.severity === 'major'
+                        ? 'warning'
+                        : 'inherit'
+                    }
+                  >
                     {alert.title} ({alert.severity})
                   </Typography>
                 }
                 secondary={
                   <>
                     {alert.description}
-                    {alert.action_required && 
-                      <Typography component="span" sx={{ display: 'block', fontStyle: 'italic', mt: 0.5 }}>
+                    {alert.action_required && (
+                      <Typography
+                        component="span"
+                        sx={{ display: 'block', fontStyle: 'italic', mt: 0.5 }}
+                      >
                         Action Required
                       </Typography>
-                    }
+                    )}
                   </>
                 }
               />
@@ -615,7 +660,7 @@ const DocumentUpload: React.FC = () => {
   return (
     <ChatContainer>
       <MessagesArea>
-        {messages.map((message) => (
+        {messages.map((message) =>
           message.type === 'user' ? (
             <UserMessage key={message.id} elevation={1}>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
@@ -631,10 +676,10 @@ const DocumentUpload: React.FC = () => {
               </Box>
             </BotMessage>
           )
-        ))}
+        )}
         <div ref={messagesEndRef} />
       </MessagesArea>
-      
+
       <InputArea>
         <input
           type="file"
@@ -643,22 +688,18 @@ const DocumentUpload: React.FC = () => {
           style={{ display: 'none' }}
           disabled={isLoading}
         />
-        <IconButton 
-          color="primary" 
-          onClick={triggerFileInput}
-          disabled={isLoading}
-        >
+        <IconButton color="primary" onClick={triggerFileInput} disabled={isLoading}>
           <AttachFileIcon />
         </IconButton>
-        
+
         <TextField
           fullWidth
-          placeholder={selectedFile ? `File selected: ${selectedFile.name}` : "No file selected"}
+          placeholder={selectedFile ? `File selected: ${selectedFile.name}` : 'No file selected'}
           disabled
           variant="outlined"
           size="small"
         />
-        
+
         <Button
           variant="contained"
           color="primary"
@@ -674,3 +715,6 @@ const DocumentUpload: React.FC = () => {
 };
 
 export default DocumentUpload;
+
+// ✅ Ensures TypeScript treats this file as a module
+export {};
